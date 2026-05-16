@@ -1,4 +1,4 @@
-package com.eventmaster.paymentservice.domain.excecao;
+package com.eventmaster.paymentservice.domain.exceptions;
 
 import java.util.UUID;
 

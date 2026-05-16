@@ -2,6 +2,7 @@ package com.eventmaster.paymentservice.application.comando;
 
 import com.eventmaster.paymentservice.domain.enums.TipoMetodoPagamento;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 
 import java.math.BigDecimal;
@@ -12,6 +13,7 @@ import java.util.UUID;
  * Isola a camada de aplicação dos DTOs da camada web.
  */
 @Getter
+@Builder
 @AllArgsConstructor
 public class CriarPagamentoComando {
 

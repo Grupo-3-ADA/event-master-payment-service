@@ -115,4 +115,8 @@ public class Pagamento {
     public boolean estaProcessando() {
         return StatusPagamento.PROCESSANDO == this.status;
     }
+
+    public boolean estaEmEstadoFinal() {
+        return this.status.isEstadoFinal();
+    }
 }

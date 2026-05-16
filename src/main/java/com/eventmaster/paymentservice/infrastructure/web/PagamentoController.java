@@ -1,6 +1,7 @@
 package com.eventmaster.paymentservice.infrastructure.web;
 
 import com.eventmaster.paymentservice.application.port.in.GerenciarPagamentoUseCase;
+import com.eventmaster.paymentservice.domain.enums.StatusPagamento;
 import com.eventmaster.paymentservice.domain.model.Pagamento;
 import com.eventmaster.paymentservice.infrastructure.web.dto.CriarPagamentoDTO;
 import com.eventmaster.paymentservice.infrastructure.web.dto.PagamentoRespostaDTO;
@@ -30,7 +31,8 @@ public class PagamentoController {
     }
 
     @PostMapping
-    @Operation(summary = "Criar pagamento", description = "Cria e processa o pagamento, retornando o resultado final")
+    @Operation(summary = "Criar pagamento",
+               description = "Cria e processa o pagamento. 201 = aprovado, 200 = rejeitado (consulte motivoRejeicao).")
     public ResponseEntity<PagamentoRespostaDTO> criarPagamento(@Valid @RequestBody CriarPagamentoDTO dto) {
         Pagamento pagamento = gerenciarPagamento.criar(mapeador.paraComando(dto));
         PagamentoRespostaDTO resposta = mapeador.paraRespostaDTO(pagamento);
@@ -39,7 +41,10 @@ public class PagamentoController {
                 .path("/{id}")
                 .buildAndExpand(resposta.getId())
                 .toUri();
-        return ResponseEntity.created(localizacao).body(resposta);
+        if (StatusPagamento.APROVADO == resposta.getStatus()) {
+            return ResponseEntity.created(localizacao).body(resposta);
+        }
+        return ResponseEntity.ok().header("Location", localizacao.toString()).body(resposta);
     }
 
     @GetMapping("/{id}")
