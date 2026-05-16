@@ -4,12 +4,13 @@ import com.eventmaster.paymentservice.application.comando.CriarPagamentoComando;
 import com.eventmaster.paymentservice.application.port.in.GerenciarPagamentoUseCase;
 import com.eventmaster.paymentservice.application.port.out.PagamentoEventoPort;
 import com.eventmaster.paymentservice.application.port.out.PagamentoRepositorioPort;
+import com.eventmaster.paymentservice.application.processador.ProcessadorNaoSuportado;
 import com.eventmaster.paymentservice.application.processador.ProcessadorPagamento;
 import com.eventmaster.paymentservice.application.processador.ResultadoProcessamento;
-import com.eventmaster.paymentservice.domain.enums.MotivoRejeicao;
 import com.eventmaster.paymentservice.domain.enums.TipoMetodoPagamento;
-import com.eventmaster.paymentservice.domain.excecao.PagamentoNaoEncontradoException;
+import com.eventmaster.paymentservice.domain.exceptions.PagamentoNaoEncontradoException;
 import com.eventmaster.paymentservice.domain.model.Pagamento;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,10 +19,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/**
- * Serviço de aplicação: implementa o caso de uso orquestrando domínio e portas de saída.
- * Não conhece JPA, Kafka nem DTOs — depende apenas de abstrações (portas).
- */
+@Slf4j
 @Service
 public class PagamentoService implements GerenciarPagamentoUseCase {
 
@@ -42,6 +40,9 @@ public class PagamentoService implements GerenciarPagamentoUseCase {
     @Override
     @Transactional
     public Pagamento criar(CriarPagamentoComando comando) {
+        log.info("Criando pagamento — pedidoId={} método={} valor={} moeda={}",
+                comando.getPedidoId(), comando.getMetodoPagamento(),
+                comando.getValor(), comando.getMoeda());
         Pagamento pagamento = Pagamento.novo(
                 comando.getPedidoId(),
                 comando.getClienteId(),
@@ -51,7 +52,6 @@ public class PagamentoService implements GerenciarPagamentoUseCase {
                 comando.getNumeroCartao(),
                 comando.getDataExpiracao(),
                 comando.getCvv());
-        pagamento = repositorio.salvar(pagamento);
         return executarProcessamento(pagamento);
     }
 
@@ -64,10 +64,13 @@ public class PagamentoService implements GerenciarPagamentoUseCase {
     @Override
     @Transactional
     public Pagamento processar(UUID id) {
+        log.info("Reprocessamento solicitado — pagamentoId={}", id);
         Pagamento pagamento = repositorio.buscarPorId(id)
                 .orElseThrow(() -> new PagamentoNaoEncontradoException(id));
 
-        if (!pagamento.estaPendente()) {
+        if (pagamento.estaEmEstadoFinal()) {
+            log.warn("Pagamento {} já está em estado final ({}), ignorando reprocessamento",
+                    id, pagamento.getStatus());
             return pagamento;
         }
 
@@ -78,30 +81,16 @@ public class PagamentoService implements GerenciarPagamentoUseCase {
         pagamento.iniciarProcessamento();
         pagamento = repositorio.salvar(pagamento);
 
-        ProcessadorPagamento processador = processadores.get(pagamento.getMetodoPagamento());
+        log.debug("Processando pagamento {} via {}", pagamento.getId(), pagamento.getMetodoPagamento());
 
-        if (processador == null) {
-            pagamento.rejeitar(MotivoRejeicao.ERRO_PROCESSAMENTO);
-            pagamento = repositorio.salvar(pagamento);
-            eventoPublicador.publicarPagamentoRejeitado(pagamento);
-            return pagamento;
-        }
+        ProcessadorPagamento processador = processadores.getOrDefault(
+                pagamento.getMetodoPagamento(), ProcessadorNaoSuportado.INSTANCIA);
 
         ResultadoProcessamento resultado = processador.processar(pagamento);
+        Pagamento finalizado = resultado.finalizar(pagamento, repositorio, eventoPublicador);
 
-        if (resultado.isFoiAprovado()) {
-            pagamento.aprovar();
-        } else {
-            pagamento.rejeitar(resultado.getMotivoRejeicao());
-        }
-        pagamento = repositorio.salvar(pagamento);
-
-        if (resultado.isFoiAprovado()) {
-            eventoPublicador.publicarPagamentoAprovado(pagamento);
-        } else {
-            eventoPublicador.publicarPagamentoRejeitado(pagamento);
-        }
-
-        return pagamento;
+        log.info("Pagamento {} finalizado — status={} motivo={}",
+                finalizado.getId(), finalizado.getStatus(), finalizado.getMotivoRejeicao());
+        return finalizado;
     }
 }

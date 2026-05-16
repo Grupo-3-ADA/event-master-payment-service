@@ -1,20 +1,21 @@
 package com.eventmaster.paymentservice.application.processador.impl;
 
-import com.eventmaster.paymentservice.application.processador.ProcessadorPagamento;
-import com.eventmaster.paymentservice.application.processador.ResultadoProcessamento;
-import com.eventmaster.paymentservice.domain.enums.MotivoRejeicao;
+import com.eventmaster.paymentservice.application.port.out.AutorizadorExternoPort;
+import com.eventmaster.paymentservice.application.processador.ProcessadorPagamentoBase;
 import com.eventmaster.paymentservice.domain.enums.TipoMetodoPagamento;
-import com.eventmaster.paymentservice.domain.model.Pagamento;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 
 @Component
-public class ProcessadorPix implements ProcessadorPagamento {
+public class ProcessadorPix extends ProcessadorPagamentoBase {
 
-    private static final BigDecimal LIMITE_MAXIMO_PIX = new BigDecimal("5000.00");
-    private static final BigDecimal LIMITE_MINIMO_PIX = new BigDecimal("0.01");
-    private static final String MOEDA_ACEITA = "BRL";
+    private static final BigDecimal LIMITE_MINIMO = new BigDecimal("0.01");
+    private static final BigDecimal LIMITE_MAXIMO = new BigDecimal("5000.00");
+
+    public ProcessadorPix(AutorizadorExternoPort autorizador) {
+        super(autorizador);
+    }
 
     @Override
     public TipoMetodoPagamento tipoPagamento() {
@@ -22,19 +23,12 @@ public class ProcessadorPix implements ProcessadorPagamento {
     }
 
     @Override
-    public ResultadoProcessamento processar(Pagamento pagamento) {
-        if (!MOEDA_ACEITA.equals(pagamento.getMoeda())) {
-            return ResultadoProcessamento.rejeitado(MotivoRejeicao.NAO_AUTORIZADO);
-        }
+    protected BigDecimal limiteMinimo() {
+        return LIMITE_MINIMO;
+    }
 
-        if (pagamento.getValor().compareTo(LIMITE_MINIMO_PIX) < 0) {
-            return ResultadoProcessamento.rejeitado(MotivoRejeicao.NAO_AUTORIZADO);
-        }
-
-        if (pagamento.getValor().compareTo(LIMITE_MAXIMO_PIX) > 0) {
-            return ResultadoProcessamento.rejeitado(MotivoRejeicao.LIMITE_EXCEDIDO);
-        }
-
-        return ResultadoProcessamento.aprovado();
+    @Override
+    protected BigDecimal limiteMaximo() {
+        return LIMITE_MAXIMO;
     }
 }

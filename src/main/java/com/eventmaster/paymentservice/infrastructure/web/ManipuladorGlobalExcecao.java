@@ -1,14 +1,15 @@
 package com.eventmaster.paymentservice.infrastructure.web;
 
-import com.eventmaster.paymentservice.domain.excecao.PagamentoNaoEncontradoException;
+import com.eventmaster.paymentservice.domain.exceptions.PagamentoDuplicadoException;
+import com.eventmaster.paymentservice.domain.exceptions.PagamentoNaoEncontradoException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class ManipuladorGlobalExcecao {
@@ -19,12 +20,20 @@ public class ManipuladorGlobalExcecao {
                 .body(Map.of("erro", ex.getMessage()));
     }
 
+    @ExceptionHandler(PagamentoDuplicadoException.class)
+    public ResponseEntity<Map<String, String>> handleDuplicado(PagamentoDuplicadoException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of(
+                        "erro", ex.getMessage(),
+                        "pagamentoId", ex.getPagamentoExistente().getId().toString()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidacao(MethodArgumentNotValidException ex) {
-        Map<String, String> erros = new HashMap<>();
-        ex.getBindingResult().getFieldErrors()
-                .forEach(erro -> erros.put(erro.getField(), erro.getDefaultMessage()));
-        return ResponseEntity.badRequest().body(erros);
+        String mensagem = ex.getBindingResult().getFieldErrors().stream()
+                .map(e -> e.getField() + ": " + e.getDefaultMessage())
+                .collect(Collectors.joining(", "));
+        return ResponseEntity.badRequest().body(Map.of("erro", mensagem));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

@@ -1,24 +1,43 @@
 package com.eventmaster.paymentservice.application.processador;
 
+import com.eventmaster.paymentservice.application.port.out.PagamentoEventoPort;
+import com.eventmaster.paymentservice.application.port.out.PagamentoRepositorioPort;
 import com.eventmaster.paymentservice.domain.enums.MotivoRejeicao;
-import lombok.Getter;
+import com.eventmaster.paymentservice.domain.model.Pagamento;
 
-@Getter
+/**
+ * Resultado de um processamento de pagamento.
+ * Usa Command pattern: cada instância carrega a ação de finalização correspondente.
+ * O PagamentoService chama apenas finalizar() — sem if/else, sem conhecer o tipo do resultado.
+ * Adicionar novos métodos de pagamento (ex: Boleto) não requer alterar o serviço.
+ */
 public class ResultadoProcessamento {
 
-    private final boolean foiAprovado;
-    private final MotivoRejeicao motivoRejeicao;
+    private final AcaoFinalizacao acao;
 
-    private ResultadoProcessamento(boolean foiAprovado, MotivoRejeicao motivoRejeicao) {
-        this.foiAprovado = foiAprovado;
-        this.motivoRejeicao = motivoRejeicao;
+    private ResultadoProcessamento(AcaoFinalizacao acao) {
+        this.acao = acao;
     }
 
     public static ResultadoProcessamento aprovado() {
-        return new ResultadoProcessamento(true, null);
+        return new ResultadoProcessamento((pagamento, repositorio, eventos) -> {
+            pagamento.aprovar();
+            Pagamento salvo = repositorio.salvar(pagamento);
+            eventos.publicarPagamentoAprovado(salvo);
+            return salvo;
+        });
     }
 
     public static ResultadoProcessamento rejeitado(MotivoRejeicao motivo) {
-        return new ResultadoProcessamento(false, motivo);
+        return new ResultadoProcessamento((pagamento, repositorio, eventos) -> {
+            pagamento.rejeitar(motivo);
+            Pagamento salvo = repositorio.salvar(pagamento);
+            eventos.publicarPagamentoRejeitado(salvo);
+            return salvo;
+        });
+    }
+
+    public Pagamento finalizar(Pagamento pagamento, PagamentoRepositorioPort repositorio, PagamentoEventoPort eventos) {
+        return acao.executar(pagamento, repositorio, eventos);
     }
 }
