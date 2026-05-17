@@ -6,6 +6,11 @@ import com.eventmaster.paymentservice.domain.model.Pagamento;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import com.eventmaster.paymentservice.domain.enums.StatusPagamento;
+import com.eventmaster.paymentservice.domain.enums.TipoMetodoPagamento;
+
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -45,5 +50,17 @@ public class PagamentoPersistenceAdapter implements PagamentoRepositorioPort {
     @Override
     public Optional<Pagamento> buscarPorId(UUID id) {
         return jpaRepository.findById(id).map(entityMapper::paraDominio);
+    }
+
+    @Override
+    public List<Pagamento> buscarBoletosVencidos(LocalDate dataReferencia) {
+        return jpaRepository
+                .findByMetodoPagamentoAndStatusAndDataVencimentoBefore(
+                        TipoMetodoPagamento.BOLETO,
+                        StatusPagamento.AGUARDANDO_PAGAMENTO,
+                        dataReferencia)
+                .stream()
+                .map(entityMapper::paraDominio)
+                .toList();
     }
 }

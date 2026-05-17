@@ -11,4 +11,6 @@ public interface PagamentoEventoPort {
     void publicarPagamentoAprovado(Pagamento pagamento);
 
     void publicarPagamentoRejeitado(Pagamento pagamento);
+
+    void publicarBoletoGerado(Pagamento pagamento);
 }

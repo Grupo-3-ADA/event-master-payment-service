@@ -41,7 +41,8 @@ public class PagamentoController {
                 .path("/{id}")
                 .buildAndExpand(resposta.getId())
                 .toUri();
-        if (StatusPagamento.APROVADO == resposta.getStatus()) {
+        if (StatusPagamento.APROVADO == resposta.getStatus()
+                || StatusPagamento.AGUARDANDO_PAGAMENTO == resposta.getStatus()) {
             return ResponseEntity.created(localizacao).body(resposta);
         }
         return ResponseEntity.ok().header("Location", localizacao.toString()).body(resposta);

@@ -1,6 +1,7 @@
 package com.eventmaster.paymentservice.infrastructure.messaging;
 
 import com.eventmaster.paymentservice.application.port.out.PagamentoEventoPort;
+import com.eventmaster.paymentservice.domain.eventos.BoletoGeradoEvento;
 import com.eventmaster.paymentservice.domain.eventos.PagamentoAprovadoEvento;
 import com.eventmaster.paymentservice.domain.eventos.PagamentoRejeitadoEvento;
 import com.eventmaster.paymentservice.domain.model.Pagamento;
@@ -22,6 +23,7 @@ public class PagamentoEventoAdapter implements PagamentoEventoPort {
 
     private static final String TOPICO_APROVADO = "pagamento.aprovado";
     private static final String TOPICO_REJEITADO = "pagamento.rejeitado";
+    private static final String TOPICO_BOLETO_GERADO = "boleto.gerado";
 
     private final OutboxEventoJpaRepository outboxRepository;
     private final ObjectMapper objectMapper;
@@ -52,6 +54,19 @@ public class PagamentoEventoAdapter implements PagamentoEventoPort {
                 pagamento.getMotivoRejeicao(),
                 LocalDateTime.now());
         salvarNoOutbox(TOPICO_REJEITADO, pagamento.getId().toString(), evento);
+    }
+
+    @Override
+    public void publicarBoletoGerado(Pagamento pagamento) {
+        BoletoGeradoEvento evento = new BoletoGeradoEvento(
+                pagamento.getId(),
+                pagamento.getPedidoId(),
+                pagamento.getClienteId(),
+                pagamento.getValor(),
+                pagamento.getLinhaDigitavel(),
+                pagamento.getDataVencimento(),
+                LocalDateTime.now());
+        salvarNoOutbox(TOPICO_BOLETO_GERADO, pagamento.getId().toString(), evento);
     }
 
     private void salvarNoOutbox(String topico, String chave, Object evento) {

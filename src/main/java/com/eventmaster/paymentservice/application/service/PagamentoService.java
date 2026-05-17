@@ -7,6 +7,7 @@ import com.eventmaster.paymentservice.application.port.out.PagamentoRepositorioP
 import com.eventmaster.paymentservice.application.processador.ProcessadorNaoSuportado;
 import com.eventmaster.paymentservice.application.processador.ProcessadorPagamento;
 import com.eventmaster.paymentservice.application.processador.ResultadoProcessamento;
+import com.eventmaster.paymentservice.domain.enums.StatusPagamento;
 import com.eventmaster.paymentservice.domain.enums.TipoMetodoPagamento;
 import com.eventmaster.paymentservice.domain.exceptions.PagamentoNaoEncontradoException;
 import com.eventmaster.paymentservice.domain.model.Pagamento;
@@ -75,6 +76,32 @@ public class PagamentoService implements GerenciarPagamentoUseCase {
         }
 
         return executarProcessamento(pagamento);
+    }
+
+    @Override
+    @Transactional
+    public Pagamento confirmarPagamentoBoleto(UUID pagamentoId) {
+        log.info("Confirmação de boleto recebida — pagamentoId={}", pagamentoId);
+        Pagamento pagamento = repositorio.buscarPorId(pagamentoId)
+                .orElseThrow(() -> new PagamentoNaoEncontradoException(pagamentoId));
+
+        if (pagamento.getMetodoPagamento() != TipoMetodoPagamento.BOLETO) {
+            throw new IllegalArgumentException("Pagamento não é do tipo boleto");
+        }
+        if (pagamento.getStatus() == StatusPagamento.APROVADO) {
+            log.info("Boleto {} já estava aprovado, ignorando confirmação duplicada", pagamentoId);
+            return pagamento;
+        }
+        if (!pagamento.estaAguardandoPagamento()) {
+            throw new IllegalArgumentException(
+                    "Pagamento não está aguardando confirmação (status atual: " + pagamento.getStatus() + ")");
+        }
+
+        pagamento.aprovar();
+        Pagamento salvo = repositorio.salvar(pagamento);
+        eventoPublicador.publicarPagamentoAprovado(salvo);
+        log.info("Boleto {} confirmado e aprovado", pagamentoId);
+        return salvo;
     }
 
     private Pagamento executarProcessamento(Pagamento pagamento) {

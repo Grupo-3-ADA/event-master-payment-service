@@ -37,6 +37,14 @@ public class ResultadoProcessamento {
         });
     }
 
+    public static ResultadoProcessamento aguardando() {
+        return new ResultadoProcessamento((pagamento, repositorio, eventos) -> {
+            Pagamento salvo = repositorio.salvar(pagamento);
+            eventos.publicarBoletoGerado(salvo);
+            return salvo;
+        });
+    }
+
     public Pagamento finalizar(Pagamento pagamento, PagamentoRepositorioPort repositorio, PagamentoEventoPort eventos) {
         return acao.executar(pagamento, repositorio, eventos);
     }

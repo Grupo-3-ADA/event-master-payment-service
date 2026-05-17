@@ -21,6 +21,8 @@ public interface PagamentoEntityMapper {
                 entity.getCvv(),
                 entity.getStatus(),
                 entity.getMotivoRejeicao(),
+                entity.getLinhaDigitavel(),
+                entity.getDataVencimento(),
                 entity.getCriadoEm(),
                 entity.getAtualizadoEm());
     }

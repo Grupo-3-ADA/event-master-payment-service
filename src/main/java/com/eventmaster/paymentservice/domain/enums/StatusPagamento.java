@@ -4,6 +4,7 @@ public enum StatusPagamento {
 
     PENDENTE(false),
     PROCESSANDO(false),
+    AGUARDANDO_PAGAMENTO(false),
     APROVADO(true),
     REJEITADO(true),
     CANCELADO(true);
