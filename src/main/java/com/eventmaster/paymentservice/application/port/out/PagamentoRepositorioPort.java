@@ -2,6 +2,8 @@ package com.eventmaster.paymentservice.application.port.out;
 
 import com.eventmaster.paymentservice.domain.model.Pagamento;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,4 +16,6 @@ public interface PagamentoRepositorioPort {
     Pagamento salvar(Pagamento pagamento);
 
     Optional<Pagamento> buscarPorId(UUID id);
+
+    List<Pagamento> buscarBoletosVencidos(LocalDate dataReferencia);
 }

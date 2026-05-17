@@ -6,6 +6,7 @@ import com.eventmaster.paymentservice.domain.enums.TipoMetodoPagamento;
 import lombok.Getter;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -28,12 +29,15 @@ public class Pagamento {
     private final String cvv;
     private StatusPagamento status;
     private MotivoRejeicao motivoRejeicao;
+    private String linhaDigitavel;
+    private LocalDate dataVencimento;
     private final LocalDateTime criadoEm;
     private LocalDateTime atualizadoEm;
 
     private Pagamento(UUID id, UUID pedidoId, UUID clienteId, BigDecimal valor, String moeda,
                       TipoMetodoPagamento metodoPagamento, String numeroCartao, String dataExpiracao,
                       String cvv, StatusPagamento status, MotivoRejeicao motivoRejeicao,
+                      String linhaDigitavel, LocalDate dataVencimento,
                       LocalDateTime criadoEm, LocalDateTime atualizadoEm) {
         this.id = id;
         this.pedidoId = pedidoId;
@@ -46,6 +50,8 @@ public class Pagamento {
         this.cvv = cvv;
         this.status = status;
         this.motivoRejeicao = motivoRejeicao;
+        this.linhaDigitavel = linhaDigitavel;
+        this.dataVencimento = dataVencimento;
         this.criadoEm = criadoEm;
         this.atualizadoEm = atualizadoEm;
     }
@@ -71,7 +77,7 @@ public class Pagamento {
         }
         LocalDateTime agora = LocalDateTime.now();
         return new Pagamento(null, pedidoId, clienteId, valor, moeda, metodoPagamento,
-                numeroCartao, dataExpiracao, cvv, StatusPagamento.PENDENTE, null, agora, agora);
+                numeroCartao, dataExpiracao, cvv, StatusPagamento.PENDENTE, null, null, null, agora, agora);
     }
 
     /**
@@ -82,9 +88,11 @@ public class Pagamento {
                                          String moeda, TipoMetodoPagamento metodoPagamento,
                                          String numeroCartao, String dataExpiracao, String cvv,
                                          StatusPagamento status, MotivoRejeicao motivoRejeicao,
+                                         String linhaDigitavel, LocalDate dataVencimento,
                                          LocalDateTime criadoEm, LocalDateTime atualizadoEm) {
         return new Pagamento(id, pedidoId, clienteId, valor, moeda, metodoPagamento, numeroCartao,
-                dataExpiracao, cvv, status, motivoRejeicao, criadoEm, atualizadoEm);
+                dataExpiracao, cvv, status, motivoRejeicao, linhaDigitavel, dataVencimento,
+                criadoEm, atualizadoEm);
     }
 
     public void iniciarProcessamento() {
@@ -108,12 +116,23 @@ public class Pagamento {
         this.atualizadoEm = LocalDateTime.now();
     }
 
+    public void registrarBoleto(String linhaDigitavel, LocalDate dataVencimento) {
+        this.linhaDigitavel = linhaDigitavel;
+        this.dataVencimento = dataVencimento;
+        this.status = StatusPagamento.AGUARDANDO_PAGAMENTO;
+        this.atualizadoEm = LocalDateTime.now();
+    }
+
     public boolean estaPendente() {
         return StatusPagamento.PENDENTE == this.status;
     }
 
     public boolean estaProcessando() {
         return StatusPagamento.PROCESSANDO == this.status;
+    }
+
+    public boolean estaAguardandoPagamento() {
+        return StatusPagamento.AGUARDANDO_PAGAMENTO == this.status;
     }
 
     public boolean estaEmEstadoFinal() {
