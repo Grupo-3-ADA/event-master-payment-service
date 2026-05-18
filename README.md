@@ -156,10 +156,27 @@ A validação do cartão usa um **stub** que simula o gateway externo (adquirent
 
 ## Testando a API
 
-O arquivo `docs/insomnia-payment-service.json` contém cenários prontos.
-Importe no Insomnia via **File → Import** e selecione o arquivo. O environment `Base URL` já aponta para `http://localhost:8080`.
+### Insomnia / Postman
 
-### Exemplos rápidos
+A coleção com todos os cenários está em:
+
+```
+docs/insomnia-payment-service.json
+```
+
+**Importar no Insomnia:** `File → Import` → selecione o arquivo.  
+**Importar no Postman:** `Import` → selecione o arquivo (formato compatível).
+
+O environment `Base URL` já aponta para `http://localhost:8080`. Cenários incluídos:
+
+| Pasta | Cenário |
+|---|---|
+| PIX | Aprovado, Limite excedido, Moeda inválida |
+| Cartão de Crédito | Aprovado, CARTAO_INVALIDO, CARTAO_EXPIRADO, Limite excedido, Campos ausentes |
+| Boleto | Gerado (AGUARDANDO_PAGAMENTO), Moeda inválida, Confirmar via webhook, Consultar por ID |
+| Consultas e Casos de Erro | Buscar por ID, Idempotência (409), Campos ausentes (400), Inexistente (404) |
+
+### Exemplos rápidos via curl
 
 **PIX aprovado:**
 ```bash
