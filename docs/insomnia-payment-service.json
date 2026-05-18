@@ -34,6 +34,12 @@
       "name": "Cartão de Crédito"
     },
     {
+      "_id": "grp_boleto",
+      "_type": "request_group",
+      "parentId": "wrk_payment_service",
+      "name": "Boleto"
+    },
+    {
       "_id": "grp_erros",
       "_type": "request_group",
       "parentId": "wrk_payment_service",
@@ -174,6 +180,69 @@
         "mimeType": "application/json",
         "text": "{\n  \"pedidoId\": \"88888888-8888-8888-8888-888888888888\",\n  \"clienteId\": \"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\n  \"valor\": 300.00,\n  \"moeda\": \"BRL\",\n  \"metodoPagamento\": \"CARTAO_CREDITO\"\n}"
       }
+    },
+
+    {
+      "_id": "req_boleto_gerado",
+      "_type": "request",
+      "parentId": "grp_boleto",
+      "name": "Boleto — Gerado (AGUARDANDO_PAGAMENTO)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/pagamentos",
+      "description": "Gera boleto com vencimento em 3 dias. Esperado: 201 | status: AGUARDANDO_PAGAMENTO | linhaDigitavel e dataVencimento preenchidos. Guarde o id da resposta para o webhook.",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"pedidoId\": \"99999999-9999-9999-9999-999999999999\",\n  \"clienteId\": \"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\n  \"valor\": 250.00,\n  \"moeda\": \"BRL\",\n  \"metodoPagamento\": \"BOLETO\"\n}"
+      }
+    },
+
+    {
+      "_id": "req_boleto_moeda",
+      "_type": "request",
+      "parentId": "grp_boleto",
+      "name": "Boleto — Rejeitado (moeda inválida)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/pagamentos",
+      "description": "Moeda USD não aceita para boleto. Esperado: 200 | status: REJEITADO | motivo: NAO_AUTORIZADO",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"pedidoId\": \"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\n  \"clienteId\": \"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\n  \"valor\": 100.00,\n  \"moeda\": \"USD\",\n  \"metodoPagamento\": \"BOLETO\"\n}"
+      }
+    },
+
+    {
+      "_id": "req_boleto_confirmacao",
+      "_type": "request",
+      "parentId": "grp_boleto",
+      "name": "Webhook — Confirmar pagamento do boleto",
+      "method": "POST",
+      "url": "{{ _.base_url }}/webhooks/boleto/confirmacao",
+      "description": "Simula callback do gateway após pagamento. Substitua pagamentoId pelo id retornado em 'Boleto — Gerado'. Esperado: 200 OK. Depois consulte o pagamento: status APROVADO.",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"pagamentoId\": \"00000000-0000-0000-0000-000000000000\",\n  \"dataPagamento\": \"2026-05-20\",\n  \"valorPago\": 250.00\n}"
+      }
+    },
+
+    {
+      "_id": "req_boleto_buscar",
+      "_type": "request",
+      "parentId": "grp_boleto",
+      "name": "Boleto — Consultar por ID",
+      "method": "GET",
+      "url": "{{ _.base_url }}/pagamentos/00000000-0000-0000-0000-000000000000",
+      "description": "Substitua o UUID pelo id retornado em 'Boleto — Gerado'. Esperado: 200 OK com linhaDigitavel e dataVencimento",
+      "headers": [],
+      "body": { "mimeType": "application/json" }
     },
 
     {

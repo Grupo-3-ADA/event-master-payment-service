@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -24,6 +25,8 @@ public class PagamentoRespostaDTO {
     private StatusPagamento status;
     private TipoMetodoPagamento metodoPagamento;
     private MotivoRejeicao motivoRejeicao;
+    private String linhaDigitavel;
+    private LocalDate dataVencimento;
     private LocalDateTime criadoEm;
     private LocalDateTime atualizadoEm;
 }

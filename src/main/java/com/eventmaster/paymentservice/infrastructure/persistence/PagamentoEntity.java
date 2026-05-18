@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -53,6 +54,9 @@ public class PagamentoEntity {
 
     @Enumerated(EnumType.STRING)
     private MotivoRejeicao motivoRejeicao;
+
+    private String linhaDigitavel;
+    private LocalDate dataVencimento;
 
     @Column(updatable = false)
     private LocalDateTime criadoEm;

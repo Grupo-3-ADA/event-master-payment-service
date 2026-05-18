@@ -16,4 +16,6 @@ public interface GerenciarPagamentoUseCase {
     Pagamento buscarPorId(UUID id);
 
     Pagamento processar(UUID id);
+
+    Pagamento confirmarPagamentoBoleto(UUID pagamentoId);
 }
