@@ -1,0 +1,306 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-05-18T00:00:00.000Z",
+  "__export_source": "payment-service-tests",
+  "resources": [
+    {
+      "_id": "wrk_payment_service",
+      "_type": "workspace",
+      "name": "Payment Service",
+      "description": "Testes da API do microsserviço de pagamentos EventMaster"
+    },
+
+    {
+      "_id": "env_base",
+      "_type": "environment",
+      "parentId": "wrk_payment_service",
+      "name": "Base URL",
+      "data": {
+        "base_url": "http://localhost:8080"
+      }
+    },
+
+    {
+      "_id": "grp_pix",
+      "_type": "request_group",
+      "parentId": "wrk_payment_service",
+      "name": "PIX"
+    },
+    {
+      "_id": "grp_cartao",
+      "_type": "request_group",
+      "parentId": "wrk_payment_service",
+      "name": "Cartão de Crédito"
+    },
+    {
+      "_id": "grp_boleto",
+      "_type": "request_group",
+      "parentId": "wrk_payment_service",
+      "name": "Boleto"
+    },
+    {
+      "_id": "grp_erros",
+      "_type": "request_group",
+      "parentId": "wrk_payment_service",
+      "name": "Consultas e Casos de Erro"
+    },
+
+    {
+      "_id": "req_pix_aprovado",
+      "_type": "request",
+      "parentId": "grp_pix",
+      "name": "PIX — Aprovado",
+      "method": "POST",
+      "url": "{{ _.base_url }}/pagamentos",
+      "description": "Valor dentro do limite (R$ 150), moeda BRL. Esperado: 201 | status: APROVADO",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"pedidoId\": \"11111111-1111-1111-1111-111111111111\",\n  \"clienteId\": \"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\n  \"valor\": 150.00,\n  \"moeda\": \"BRL\",\n  \"metodoPagamento\": \"PIX\"\n}"
+      }
+    },
+
+    {
+      "_id": "req_pix_limite",
+      "_type": "request",
+      "parentId": "grp_pix",
+      "name": "PIX — Rejeitado (limite excedido)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/pagamentos",
+      "description": "Valor acima de R$ 5.000. Esperado: 201 | status: REJEITADO | motivo: LIMITE_EXCEDIDO",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"pedidoId\": \"22222222-2222-2222-2222-222222222222\",\n  \"clienteId\": \"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\n  \"valor\": 6000.00,\n  \"moeda\": \"BRL\",\n  \"metodoPagamento\": \"PIX\"\n}"
+      }
+    },
+
+    {
+      "_id": "req_pix_moeda",
+      "_type": "request",
+      "parentId": "grp_pix",
+      "name": "PIX — Rejeitado (moeda inválida)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/pagamentos",
+      "description": "Moeda USD não aceita para PIX. Esperado: 201 | status: REJEITADO | motivo: NAO_AUTORIZADO",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"pedidoId\": \"33333333-3333-3333-3333-333333333333\",\n  \"clienteId\": \"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\n  \"valor\": 100.00,\n  \"moeda\": \"USD\",\n  \"metodoPagamento\": \"PIX\"\n}"
+      }
+    },
+
+    {
+      "_id": "req_cartao_aprovado",
+      "_type": "request",
+      "parentId": "grp_cartao",
+      "name": "Cartão — Aprovado",
+      "method": "POST",
+      "url": "{{ _.base_url }}/pagamentos",
+      "description": "Número genérico (não termina em 0002 ou 0069). Esperado: 201 | status: APROVADO",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"pedidoId\": \"44444444-4444-4444-4444-444444444444\",\n  \"clienteId\": \"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\n  \"valor\": 500.00,\n  \"moeda\": \"BRL\",\n  \"metodoPagamento\": \"CARTAO_CREDITO\",\n  \"numeroCartao\": \"4111111111111111\",\n  \"dataExpiracao\": \"12/29\",\n  \"cvv\": \"123\"\n}"
+      }
+    },
+
+    {
+      "_id": "req_cartao_invalido",
+      "_type": "request",
+      "parentId": "grp_cartao",
+      "name": "Cartão — Rejeitado pelo gateway (CARTAO_INVALIDO)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/pagamentos",
+      "description": "Magic number: termina em 0002 → gateway recusa como inválido. Esperado: 201 | status: REJEITADO | motivo: CARTAO_INVALIDO",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"pedidoId\": \"55555555-5555-5555-5555-555555555555\",\n  \"clienteId\": \"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\n  \"valor\": 200.00,\n  \"moeda\": \"BRL\",\n  \"metodoPagamento\": \"CARTAO_CREDITO\",\n  \"numeroCartao\": \"4111111111110002\",\n  \"dataExpiracao\": \"12/29\",\n  \"cvv\": \"123\"\n}"
+      }
+    },
+
+    {
+      "_id": "req_cartao_expirado",
+      "_type": "request",
+      "parentId": "grp_cartao",
+      "name": "Cartão — Rejeitado pelo gateway (CARTAO_EXPIRADO)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/pagamentos",
+      "description": "Magic number: termina em 0069 → gateway recusa como expirado. Esperado: 201 | status: REJEITADO | motivo: CARTAO_EXPIRADO",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"pedidoId\": \"66666666-6666-6666-6666-666666666666\",\n  \"clienteId\": \"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\n  \"valor\": 200.00,\n  \"moeda\": \"BRL\",\n  \"metodoPagamento\": \"CARTAO_CREDITO\",\n  \"numeroCartao\": \"4111111111110069\",\n  \"dataExpiracao\": \"12/29\",\n  \"cvv\": \"123\"\n}"
+      }
+    },
+
+    {
+      "_id": "req_cartao_limite",
+      "_type": "request",
+      "parentId": "grp_cartao",
+      "name": "Cartão — Rejeitado pela regra (LIMITE_EXCEDIDO)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/pagamentos",
+      "description": "Valor acima de R$ 10.000. Esperado: 201 | status: REJEITADO | motivo: LIMITE_EXCEDIDO",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"pedidoId\": \"77777777-7777-7777-7777-777777777777\",\n  \"clienteId\": \"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\n  \"valor\": 15000.00,\n  \"moeda\": \"BRL\",\n  \"metodoPagamento\": \"CARTAO_CREDITO\",\n  \"numeroCartao\": \"4111111111111111\",\n  \"dataExpiracao\": \"12/29\",\n  \"cvv\": \"123\"\n}"
+      }
+    },
+
+    {
+      "_id": "req_cartao_campos",
+      "_type": "request",
+      "parentId": "grp_cartao",
+      "name": "Cartão — Rejeitado (campos obrigatórios ausentes)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/pagamentos",
+      "description": "Sem numeroCartao, cvv e dataExpiracao. Esperado: 201 | status: REJEITADO | motivo: CARTAO_INVALIDO",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"pedidoId\": \"88888888-8888-8888-8888-888888888888\",\n  \"clienteId\": \"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\n  \"valor\": 300.00,\n  \"moeda\": \"BRL\",\n  \"metodoPagamento\": \"CARTAO_CREDITO\"\n}"
+      }
+    },
+
+    {
+      "_id": "req_boleto_gerado",
+      "_type": "request",
+      "parentId": "grp_boleto",
+      "name": "Boleto — Gerado (AGUARDANDO_PAGAMENTO)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/pagamentos",
+      "description": "Gera boleto com vencimento em 3 dias. Esperado: 201 | status: AGUARDANDO_PAGAMENTO | linhaDigitavel e dataVencimento preenchidos. Guarde o id da resposta para o webhook.",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"pedidoId\": \"99999999-9999-9999-9999-999999999999\",\n  \"clienteId\": \"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\n  \"valor\": 250.00,\n  \"moeda\": \"BRL\",\n  \"metodoPagamento\": \"BOLETO\"\n}"
+      }
+    },
+
+    {
+      "_id": "req_boleto_moeda",
+      "_type": "request",
+      "parentId": "grp_boleto",
+      "name": "Boleto — Rejeitado (moeda inválida)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/pagamentos",
+      "description": "Moeda USD não aceita para boleto. Esperado: 200 | status: REJEITADO | motivo: NAO_AUTORIZADO",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"pedidoId\": \"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\n  \"clienteId\": \"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\n  \"valor\": 100.00,\n  \"moeda\": \"USD\",\n  \"metodoPagamento\": \"BOLETO\"\n}"
+      }
+    },
+
+    {
+      "_id": "req_boleto_confirmacao",
+      "_type": "request",
+      "parentId": "grp_boleto",
+      "name": "Webhook — Confirmar pagamento do boleto",
+      "method": "POST",
+      "url": "{{ _.base_url }}/webhooks/boleto/confirmacao",
+      "description": "Simula callback do gateway após pagamento. Substitua pagamentoId pelo id retornado em 'Boleto — Gerado'. Esperado: 200 OK. Depois consulte o pagamento: status APROVADO.",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"pagamentoId\": \"00000000-0000-0000-0000-000000000000\",\n  \"dataPagamento\": \"2026-05-20\",\n  \"valorPago\": 250.00\n}"
+      }
+    },
+
+    {
+      "_id": "req_boleto_buscar",
+      "_type": "request",
+      "parentId": "grp_boleto",
+      "name": "Boleto — Consultar por ID",
+      "method": "GET",
+      "url": "{{ _.base_url }}/pagamentos/00000000-0000-0000-0000-000000000000",
+      "description": "Substitua o UUID pelo id retornado em 'Boleto — Gerado'. Esperado: 200 OK com linhaDigitavel e dataVencimento",
+      "headers": [],
+      "body": { "mimeType": "application/json" }
+    },
+
+    {
+      "_id": "req_buscar",
+      "_type": "request",
+      "parentId": "grp_erros",
+      "name": "Buscar pagamento por ID",
+      "method": "GET",
+      "url": "{{ _.base_url }}/pagamentos/44444444-4444-4444-4444-444444444444",
+      "description": "Substitua o UUID pelo id retornado em algum POST anterior. Esperado: 200 OK",
+      "headers": [],
+      "body": { "mimeType": "application/json" }
+    },
+
+    {
+      "_id": "req_idempotencia",
+      "_type": "request",
+      "parentId": "grp_erros",
+      "name": "Idempotência — pedidoId duplicado (409)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/pagamentos",
+      "description": "Mesmo pedidoId do request 'PIX Aprovado'. Esperado: 409 Conflict com pagamentoId do original",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"pedidoId\": \"11111111-1111-1111-1111-111111111111\",\n  \"clienteId\": \"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\n  \"valor\": 150.00,\n  \"moeda\": \"BRL\",\n  \"metodoPagamento\": \"PIX\"\n}"
+      }
+    },
+
+    {
+      "_id": "req_validacao",
+      "_type": "request",
+      "parentId": "grp_erros",
+      "name": "Validação de entrada — campos ausentes (400)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/pagamentos",
+      "description": "Sem pedidoId e sem valor. Esperado: 400 Bad Request com mensagem de erro",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"clienteId\": \"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\n  \"moeda\": \"BRL\",\n  \"metodoPagamento\": \"PIX\"\n}"
+      }
+    },
+
+    {
+      "_id": "req_nao_encontrado",
+      "_type": "request",
+      "parentId": "grp_erros",
+      "name": "Pagamento inexistente (404)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/pagamentos/00000000-0000-0000-0000-000000000000",
+      "description": "UUID que não existe no banco. Esperado: 404 Not Found",
+      "headers": [],
+      "body": { "mimeType": "application/json" }
+    }
+  ]
+}
