@@ -29,7 +29,7 @@ public class BoletoExpiracaoJob {
     @Transactional
     public void expirarBoletosVencidos() {
         LocalDate hoje = LocalDate.now();
-        List<Pagamento> vencidos = repositorio.buscarBoletosVencidos(hoje);
+        List<Pagamento> vencidos = repositorio.buscarBoletosVencidos(hoje.plusDays(1));
         if (vencidos.isEmpty()) {
             log.debug("Nenhum boleto vencido para expirar em {}", hoje);
             return;
